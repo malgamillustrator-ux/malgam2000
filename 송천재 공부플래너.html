@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>송천재 임용합격 플래너</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: white;
+            overflow-y: auto;
+        }
+        .screen.active {
+            display: flex;
+        }
+        /* 스크롤바 숨기기 */
+        ::-webkit-scrollbar { display: none; }
+        
+        .timer-font {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+        }
+
+        .sticker {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .sticker:active { transform: scale(0.9); }
+        .sticker.red { background-color: #ef4444; }
+        .sticker.yellow { background-color: #FFE600; } /* 완벽한 쨍한 노란색 */
+        .sticker.green { background-color: #22c55e; }
+        .sticker.empty { background-color: #e5e7eb; border: 2px dashed #9ca3af; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Screen 1: Intro -->
+    <div id="screen-intro" class="screen active justify-center items-center p-8 bg-gradient-to-br from-indigo-50 to-white text-center">
+        <div class="mb-12 animate-bounce">
+            <span class="text-6xl">🎨</span>
+        </div>
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-4 leading-tight">
+            나는 송천재,<br>반드시 해낸다!
+        </h1>
+        <p class="text-gray-600 mb-12 font-medium">
+            초수의 기적, 하루 4시간의 마법.<br>여름방학 한 달, 뼈대를 세워봅시다.
+        </p>
+        <button onclick="nav.toCalendar()" class="w-full max-w-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-95 text-lg">
+            출발! 🚀
+        </button>
+    </div>
+
+    <!-- Screen 2: Calendar -->
+    <div id="screen-calendar" class="screen p-6">
+        <div class="flex justify-between items-center mb-6 mt-4">
+            <h2 class="text-2xl font-bold text-gray-800">여름방학 플랜 🗓️</h2>
+            <button onclick="nav.toIntro()" class="text-gray-400 hover:text-gray-600 flex flex-col items-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <span class="text-xs mt-1 font-medium">첫화면</span>
+            </button>
+        </div>
+        <div class="text-sm text-gray-500 mb-4">7월 21일 ~ 8월 17일</div>
+        
+        <div id="calendar-grid" class="flex flex-col gap-3 pb-8">
+            <!-- Calendar items will be injected here -->
+        </div>
+    </div>
+
+    <!-- Subject Selection Modal (Overlay on Calendar) -->
+    <div id="modal-subjects" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex-col justify-end">
+        <div class="bg-white rounded-t-3xl p-6 pb-12 w-full max-w-[480px] mx-auto transform transition-transform animate-[slideUp_0.3s_ease-out]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modal-date-title" class="text-xl font-bold text-gray-800"></h3>
+                <button onclick="closeSubjectModal()" class="p-2 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="subject-list" class="flex flex-col gap-3">
+                <!-- Subjects will be injected here -->
+            </div>
+            <button onclick="nav.toCheck()" class="mt-6 w-full bg-gray-800 text-white py-4 rounded-xl font-bold text-lg active:scale-95 transition-transform">
+                오늘 공부 체크하기 ✔️
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen 3: Timer -->
+    <div id="screen-timer" class="screen bg-gray-900 text-white p-6 justify-between">
+        <div class="mt-4 flex justify-between items-center gap-3">
+            <button onclick="nav.toSubjectModal()" class="flex-1 py-4 bg-gray-800 rounded-2xl text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex justify-center items-center gap-1 active:scale-95 shadow-lg border border-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                <span class="text-base font-bold">과목선택</span>
+            </button>
+            <div id="timer-subject-badge" class="flex-none px-4 py-2 rounded-xl text-base font-bold text-gray-900 text-center bg-white mx-1 shadow-sm">
+                과목명
+            </div>
+            <button onclick="nav.toCalendar()" class="flex-1 py-4 bg-gray-800 rounded-2xl text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex justify-center items-center gap-1 active:scale-95 shadow-lg border border-gray-700">
+                <span class="text-base font-bold">달력홈</span>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 flex flex-col items-center justify-center -mt-10">
+            <div id="timer-phase-badge" class="mb-6 px-6 py-2 rounded-full border-2 border-white text-white font-bold text-xl">
+                암기 (2시간)
+            </div>
+            <div id="time-display" class="text-7xl font-bold timer-font tracking-tighter mb-12">
+                02:00:00
+            </div>
+            
+            <div class="flex gap-4 items-center mb-6 w-full justify-center px-4">
+                <button id="btn-timer-reset-phase" onclick="timer.resetPhase()" class="w-20 h-20 rounded-full bg-gray-800 text-gray-300 font-bold text-sm flex items-center justify-center shadow-lg active:scale-95 transition-transform text-center leading-tight">
+                    현재단계<br>초기화
+                </button>
+                <button id="btn-timer-action" onclick="timer.toggle()" class="w-24 h-24 rounded-full bg-white text-gray-900 font-bold text-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10 shrink-0 text-center leading-tight">
+                    시작
+                </button>
+                <button id="btn-timer-next" onclick="timer.skipToNext()" class="w-20 h-20 rounded-full bg-gray-700 text-white font-bold text-sm flex items-center justify-center shadow-lg active:scale-95 transition-transform text-center leading-tight">
+                    인출로<br>넘기기
+                </button>
+            </div>
+
+            <button id="btn-timer-reset-all" onclick="timer.resetAll()" class="text-gray-400 underline text-sm hover:text-white transition-colors py-2 px-4 mb-2">
+                처음부터 다시하기 (암기부터)
+            </button>
+        </div>
+        <div class="text-center text-gray-500 text-sm pb-8">
+            도서관 모드 (무소음)
+        </div>
+    </div>
+
+    <!-- Screen 4: Daily Check -->
+    <div id="screen-check" class="screen p-6 bg-gray-50">
+        <div class="flex items-center mb-8 mt-4">
+            <button onclick="nav.toCalendar()" class="p-2 -ml-2 text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <h2 id="check-date-title" class="text-2xl font-bold text-gray-800 ml-2">하루 마무리</h2>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+            <p class="text-gray-600 mb-6 font-medium">오늘 계획한 과목을 얼마나 잘 지켰나요?<br>스티커를 눌러 평가해주세요!</p>
+            
+            <div id="check-subjects-list" class="flex flex-col gap-6">
+                <!-- Check items injected here -->
+            </div>
+        </div>
+
+        <div class="mt-auto pb-8">
+            <div class="flex justify-center gap-4 mb-6 text-sm text-gray-500">
+                <div class="flex items-center gap-1"><div class="w-4 h-4 rounded-full bg-green-500"></div>완벽</div>
+                <div class="flex items-center gap-1"><div class="w-4 h-4 rounded-full bg-[#FFE600]"></div>보통</div>
+                <div class="flex items-center gap-1"><div class="w-4 h-4 rounded-full bg-red-500"></div>부족</div>
+            </div>
+            <button onclick="nav.toCalendar()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold text-lg active:scale-95 transition-transform">
+                수고했어요, 내일도 화이팅!
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Data Definition ---
+    const scheduleData = [
+        { date: '7/21', type: 'study', dayNum: 1, event: '도서관' },
+        { date: '7/22', type: 'study', dayNum: 2, event: '도서관' },
+        { date: '7/23', type: 'study', dayNum: 3, event: '도서관' },
+        { date: '7/24', type: 'study', dayNum: 4, event: '도서관' },
+        { date: '7/25', type: 'rest', event: '자격증 시험 / 집안 정리' },
+        { date: '7/26', type: 'study', dayNum: 5, event: '도서관' },
+        { date: '7/27', type: 'study', dayNum: 6, event: '도서관' },
+        { date: '7/28', type: 'study', dayNum: 7, event: '도서관' },
+        { date: '7/29', type: 'study', dayNum: 8, event: '도서관' },
+        { date: '7/30', type: 'rest', event: '아소작' },
+        { date: '7/31', type: 'study', dayNum: 9, event: '도서관' },
+        { date: '8/1', type: 'study', dayNum: 10, event: '도서관' },
+        { date: '8/2', type: 'study', dayNum: 11, event: '도서관' },
+        { date: '8/3', type: 'study', dayNum: 12, event: '도서관' },
+        { date: '8/4', type: 'rest', event: '학교 근무' },
+        { date: '8/5', type: 'study', dayNum: 13, event: '도서관' },
+        { date: '8/6', type: 'rest', event: 'AI선도교사 컨퍼런스(온라인)' },
+        { date: '8/7', type: 'study', dayNum: 14, event: '도서관' },
+        { date: '8/8', type: 'study', dayNum: 15, event: '도서관' },
+        { date: '8/9', type: 'study', dayNum: 16, event: '도서관' },
+        { date: '8/10', type: 'study', dayNum: 17, event: '도서관' },
+        { date: '8/11', type: 'study', dayNum: 18, event: '도서관' },
+        { date: '8/12', type: 'rest', event: '코난개봉 / 휴식' },
+        { date: '8/13', type: 'rest', event: '학교 당직 근무' },
+        { date: '8/14', type: 'study', dayNum: 19, event: '도서관' },
+        { date: '8/15', type: 'study', dayNum: 20, event: '도서관' },
+        { date: '8/16', type: 'study', dayNum: 21, event: '도서관' },
+        { date: '8/17', type: 'study', dayNum: 22, event: '도서관' }
+    ];
+
+    const subjectsInfo = {
+        'edu': { name: '교육학', colorClass: 'bg-indigo-100 border-indigo-300 text-indigo-800' },
+        'artEd': { name: '미교론', colorClass: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
+        'exp': { name: '표현', colorClass: 'bg-purple-100 border-purple-300 text-purple-800' },
+        'artHistW': { name: '서양미술사', colorClass: 'bg-pink-100 border-pink-300 text-pink-800' },
+        'artHistE': { name: '동양미술사', colorClass: 'bg-teal-100 border-teal-300 text-teal-800' }
+    };
+
+    // State
+    let state = {
+        selectedDayData: null,
+        activeSubjectKey: null,
+        evaluations: {} 
+    };
+
+    // --- Timer Logic ---
+    let timerInterval = null;
+    const timer = {
+        timeLeft: 0,
+        phase: 'memorize', // 'memorize' or 'recall'
+        isRunning: false,
+        
+        init: function(subjectKey) {
+            this.pause();
+            const info = subjectsInfo[subjectKey];
+            document.getElementById('timer-subject-badge').innerText = info.name;
+            document.getElementById('timer-subject-badge').className = `flex-none px-4 py-2 rounded-xl text-base font-bold text-center mx-1 shadow-sm ${info.colorClass}`;
+            
+            this.resetAll();
+        },
+        
+        updateDisplay: function() {
+            const h = Math.floor(this.timeLeft / 3600);
+            const m = Math.floor((this.timeLeft % 3600) / 60);
+            const s = this.timeLeft % 60;
+            
+            if (this.timeLeft === 0 && !this.isRunning && this.phase === 'done') {
+                document.getElementById('time-display').innerText = "완료!";
+            } else {
+                document.getElementById('time-display').innerText = 
+                    String(h).padStart(2, '0') + ':' + 
+                    String(m).padStart(2, '0') + ':' + 
+                    String(s).padStart(2, '0');
+            }
+            
+            const phaseText = this.phase === 'memorize' ? '암기 (2시간)' : (this.phase === 'recall' ? '인출 (1시간)' : '공부 완료');
+            const phaseBg = this.phase === 'memorize' ? 'border-white text-white' : 'border-yellow-400 text-yellow-400';
+            const badge = document.getElementById('timer-phase-badge');
+            badge.innerText = phaseText;
+            badge.className = `mb-6 px-6 py-2 rounded-full border-2 font-bold text-xl ${phaseBg}`;
+            
+            const btnAction = document.getElementById('btn-timer-action');
+            if (this.isRunning) {
+                btnAction.innerText = '멈춤';
+                btnAction.className = 'w-24 h-24 rounded-full bg-red-500 text-white font-bold text-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10 shrink-0 text-center leading-tight';
+            } else {
+                let btnText = '시작';
+                if (this.timeLeft !== 7200 && this.phase === 'memorize') btnText = '이어서\n시작';
+                if (this.timeLeft !== 3600 && this.phase === 'recall') btnText = '이어서\n시작';
+                if (this.phase === 'done') btnText = '끝';
+
+                btnAction.innerText = btnText;
+                btnAction.className = 'w-24 h-24 rounded-full bg-white text-gray-900 font-bold text-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10 shrink-0 text-center leading-tight';
+            }
+        },
+        
+        toggle: function() {
+            if (this.phase === 'done') return;
+            if (this.isRunning) {
+                this.pause();
+            } else {
+                this.start();
+            }
+        },
+        
+        start: function() {
+            if (this.timeLeft <= 0) return;
+            this.isRunning = true;
+            this.updateDisplay();
+            
+            timerInterval = setInterval(() => {
+                this.timeLeft--;
+                if (this.timeLeft <= 0) {
+                    this.pause();
+                    this.timeLeft = 0;
+                    
+                    if (this.phase === 'memorize') {
+                        this.phase = 'recall';
+                        this.timeLeft = 3600; // 1 hour
+                        this.updateDisplay();
+                    } else if (this.phase === 'recall') {
+                        this.phase = 'done';
+                        this.updateDisplay();
+                    }
+                } else {
+                    this.updateDisplay();
+                }
+            }, 1000); // 1초
+        },
+        
+        pause: function() {
+            this.isRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
+            this.updateDisplay();
+        },
+        
+        resetPhase: function() {
+            this.pause();
+            if (this.phase === 'memorize') {
+                this.timeLeft = 7200;
+            } else if (this.phase === 'recall' || this.phase === 'done') {
+                this.phase = 'recall';
+                this.timeLeft = 3600;
+            }
+            this.updateDisplay();
+        },
+        
+        resetAll: function() {
+            this.pause();
+            this.phase = 'memorize';
+            this.timeLeft = 7200; // 2 hours
+            this.updateDisplay();
+        },
+        
+        skipToNext: function() {
+            this.pause();
+            this.phase = 'recall';
+            this.timeLeft = 3600;
+            this.updateDisplay();
+        }
+    };
+
+    // --- Navigation Logic ---
+    function closeSubjectModal() {
+        document.getElementById('modal-subjects').classList.replace('flex', 'hidden');
+    }
+
+    const nav = {
+        hideAll: () => {
+            if (typeof timer !== 'undefined') timer.pause();
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            closeSubjectModal();
+        },
+        toIntro: () => { nav.hideAll(); document.getElementById('screen-intro').classList.add('active'); },
+        toCalendar: () => { 
+            nav.hideAll(); 
+            renderCalendar();
+            document.getElementById('screen-calendar').classList.add('active'); 
+        },
+        toSubjectModal: () => {
+            nav.toCalendar();
+            if(state.selectedDayData) {
+                openSubjectModal(state.selectedDayData);
+            }
+        },
+        toTimer: (subjectKey) => {
+            state.activeSubjectKey = subjectKey;
+            nav.hideAll();
+            timer.init(subjectKey);
+            document.getElementById('screen-timer').classList.add('active');
+        },
+        toCheck: () => {
+            nav.hideAll();
+            renderCheckScreen();
+            document.getElementById('screen-check').classList.add('active');
+        }
+    };
+
+    // --- Calendar & Modal Logic ---
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+
+        scheduleData.forEach(day => {
+            const isStudy = day.type === 'study';
+            const bgClass = isStudy ? 'bg-orange-100 border-orange-200' : 'bg-white border-gray-200';
+            const textClass = isStudy ? 'text-orange-900' : 'text-gray-500';
+            
+            // 평가 스티커 표시 로직
+            let stickersHtml = '';
+            if (state.evaluations[day.date]) {
+                const evals = state.evaluations[day.date];
+                const colors = { 'green': 'bg-green-500', 'yellow': 'bg-[#FFE600]', 'red': 'bg-red-500' };
+                for (let subj in evals) {
+                    if (evals[subj] !== 'empty' && colors[evals[subj]]) {
+                        stickersHtml += `<div class="w-3 h-3 rounded-full ${colors[evals[subj]]} shadow-sm border border-black/10"></div>`;
+                    }
+                }
+            }
+            
+            const card = document.createElement('div');
+            card.className = `flex justify-between items-center p-4 rounded-xl border-2 ${bgClass} ${isStudy ? 'cursor-pointer active:scale-[0.98] transition-transform shadow-sm' : ''}`;
+            
+            card.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col items-center justify-center min-w-[3rem]">
+                        <div class="font-bold text-lg ${textClass}">${day.date}</div>
+                        ${stickersHtml ? `<div class="flex gap-0.5 mt-1 justify-center">${stickersHtml}</div>` : ''}
+                    </div>
+                    <div class="font-medium ${textClass}">${day.event}</div>
+                </div>
+                ${isStudy ? `<div class="text-orange-500 bg-white px-3 py-1 rounded-full text-xs font-bold border border-orange-200 whitespace-nowrap">Day ${day.dayNum}</div>` : ''}
+            `;
+
+            if (isStudy) {
+                card.onclick = () => openSubjectModal(day);
+            }
+
+            grid.appendChild(card);
+        });
+    }
+
+    function openSubjectModal(dayData) {
+        state.selectedDayData = dayData;
+        document.getElementById('modal-date-title').innerText = `${dayData.date} 공부 계획`;
+        
+        const list = document.getElementById('subject-list');
+        list.innerHTML = '';
+
+        // 미술사 결정
+        const isOddDay = dayData.dayNum % 2 !== 0;
+        const artHistKey = isOddDay ? 'artHistW' : 'artHistE';
+
+        const subjectsForDay = ['edu', 'artEd', 'exp', artHistKey];
+
+        subjectsForDay.forEach(key => {
+            const info = subjectsInfo[key];
+            const btn = document.createElement('button');
+            btn.className = `w-full flex items-center justify-between p-4 rounded-xl border-2 ${info.colorClass} active:scale-[0.98] transition-transform text-left`;
+            btn.onclick = () => nav.toTimer(key);
+            btn.innerHTML = `
+                <span class="font-bold text-lg">${info.name}</span>
+                <span class="text-sm opacity-80">암기 2H + 인출 1H</span>
+            `;
+            list.appendChild(btn);
+        });
+
+        document.getElementById('modal-subjects').classList.remove('hidden');
+        document.getElementById('modal-subjects').classList.add('flex');
+    }
+
+    function renderCheckScreen() {
+        if(!state.selectedDayData) return;
+        const date = state.selectedDayData.date;
+        document.getElementById('check-date-title').innerText = `${date} 하루 마무리`;
+        
+        const list = document.getElementById('check-subjects-list');
+        list.innerHTML = '';
+        
+        if (!state.evaluations[date]) {
+            state.evaluations[date] = {};
+        }
+
+        const isOddDay = state.selectedDayData.dayNum % 2 !== 0;
+        const artHistKey = isOddDay ? 'artHistW' : 'artHistE';
+        const subjectsForDay = ['edu', 'artEd', 'exp', artHistKey];
+
+        subjectsForDay.forEach(key => {
+            const info = subjectsInfo[key];
+            const currentState = state.evaluations[date][key] || 'empty';
+            
+            const item = document.createElement('div');
+            item.className = "flex justify-between items-center p-4 border-b border-gray-100 last:border-0";
+            item.innerHTML = `
+                <div class="font-bold text-lg text-gray-800 flex items-center gap-3">
+                    <div class="w-4 h-4 rounded-full ${info.colorClass.split(' ')[0]}"></div>
+                    ${info.name}
+                </div>
+                <div id="sticker-${key}" class="sticker ${currentState}" onclick="toggleSticker('${date}', '${key}')"></div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    const stickerStates = ['empty', 'green', 'yellow', 'red'];
+    function toggleSticker(date, subjectKey) {
+        let current = state.evaluations[date][subjectKey] || 'empty';
+        let nextIndex = (stickerStates.indexOf(current) + 1) % stickerStates.length;
+        let nextState = stickerStates[nextIndex];
+        
+        state.evaluations[date][subjectKey] = nextState;
+        
+        const el = document.getElementById(`sticker-${subjectKey}`);
+        el.className = `sticker ${nextState}`;
+    }
+
+</script>
+</body>
+</html>
